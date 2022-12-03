@@ -21,7 +21,7 @@ func Start() {
 			context.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
-		if strings.TrimPrefix("Bearer ", authorization) != os.Getenv("API_KEY") {
+		if strings.TrimPrefix("Bearer ", authorization) != os.Getenv("WEBSERVER_TOKEN") {
 			context.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
