@@ -1,0 +1,19 @@
+name: Docker
+on: [push]
+
+jobs:
+  push-image:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: ⬇️ Checkout
+        uses: actions/checkout@v3
+      - name: 🐋 Build Docker image
+        run: docker build -t ghcr.io/romitou/disneytables:latest .
+      - name: 🔐 Log in to registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: 📤 Push image
+        run: docker push ghcr.io/romitou/disneytables:latest
