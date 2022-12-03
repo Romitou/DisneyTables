@@ -6,6 +6,7 @@ import (
 	"github.com/romitou/disneytables/redis"
 	"github.com/romitou/disneytables/tasker"
 	"github.com/romitou/disneytables/tasker/tasks"
+	"github.com/romitou/disneytables/webserver"
 	"log"
 )
 
@@ -24,6 +25,6 @@ func main() {
 		tasks.RenewAuthDetails(),
 	)
 
-	go redis.Get().SubscribeBookAlerts()
+	go webserver.Start()
 	tasker.Get().Start()
 }

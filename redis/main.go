@@ -3,11 +3,7 @@ package redis
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/go-redis/redis/v9"
-	"github.com/romitou/disneytables/database"
-	"github.com/romitou/disneytables/database/models"
-	"log"
 	"os"
 )
 
@@ -46,31 +42,4 @@ func (r *DisneyRedis) SendBookNotification(alert BookNotification) error {
 		return err
 	}
 	return r.RedisClient.Publish(context.Background(), "book-notifications", string(marshal)).Err()
-}
-
-func (r *DisneyRedis) SubscribeBookAlerts() {
-	subscribe := r.RedisClient.Subscribe(context.Background(), "book-alerts")
-	defer subscribe.Close()
-	for {
-		message, err := subscribe.ReceiveMessage(context.Background())
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-
-		fmt.Println(message.Channel, message.Payload)
-
-		var bookAlert models.BookAlert
-		err = json.Unmarshal([]byte(message.Payload), &bookAlert)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-
-		err = database.Get().CreateBookAlert(bookAlert)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-	}
 }

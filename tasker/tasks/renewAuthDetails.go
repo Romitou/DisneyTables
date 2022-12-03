@@ -13,7 +13,7 @@ func RenewAuthDetails() *tasker.Task {
 		Cron:        "0 */6 * * *",
 		Immediately: true,
 		Run: func() {
-			authDetails, err := database.Get().FirstAuthDetails()
+			authDetails, err := database.Get().LastAuthDetails()
 			if err != nil {
 				log.Println(err)
 				return

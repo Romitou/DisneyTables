@@ -27,7 +27,7 @@ func addCustomHeaders(request *http.Request) {
 
 func addAuthHeaders(request *http.Request) {
 	request.Header.Set("x-api-key", os.Getenv("API_KEY"))
-	firstAuthDetails, err := database.Get().FirstAuthDetails()
+	firstAuthDetails, err := database.Get().LastAuthDetails()
 	if err != nil {
 		return
 	}
@@ -90,6 +90,9 @@ type Restaurant struct {
 	Name             string `json:"name"`
 	DisneyID         string `json:"id"`
 	BookingAvailable bool   `json:"drsApp"`
+	HeroMediaMobile  struct {
+		URL string `json:"url"`
+	} `json:"heroMediaMobile"`
 }
 
 type RestaurantResponse struct {
