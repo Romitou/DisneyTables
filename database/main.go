@@ -55,9 +55,9 @@ func (d *DisneyDatabase) CreateRestaurant(restaurant models.Restaurant) error {
 	return d.gorm.Create(&restaurant).Error
 }
 
-func (d *DisneyDatabase) FirstAuthDetails() (models.AuthDetails, error) {
+func (d *DisneyDatabase) LastAuthDetails() (models.AuthDetails, error) {
 	var authDetails models.AuthDetails
-	err := d.gorm.First(&authDetails).Error
+	err := d.gorm.Last(&authDetails).Error
 	return authDetails, err
 }
 

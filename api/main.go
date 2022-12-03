@@ -27,7 +27,7 @@ func addCustomHeaders(request *http.Request) {
 
 func addAuthHeaders(request *http.Request) {
 	request.Header.Set("x-api-key", os.Getenv("API_KEY"))
-	firstAuthDetails, err := database.Get().FirstAuthDetails()
+	firstAuthDetails, err := database.Get().LastAuthDetails()
 	if err != nil {
 		return
 	}
