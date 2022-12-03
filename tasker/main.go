@@ -51,5 +51,6 @@ func (t *Tasker) Start() {
 		}
 	}
 
+	log.Println("Starting scheduler...")
 	t.scheduler.StartBlocking()
 }

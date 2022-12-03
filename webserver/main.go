@@ -1,4 +1,4 @@
-package http
+package webserver
 
 import (
 	"github.com/gin-gonic/gin"
@@ -80,6 +80,7 @@ func Start() {
 		c.JSON(http.StatusOK, bookAlerts)
 	})
 
+	log.Println("Starting webserver...")
 	err := r.Run("0.0.0.0:8080")
 	if err != nil {
 		log.Fatal(err)
