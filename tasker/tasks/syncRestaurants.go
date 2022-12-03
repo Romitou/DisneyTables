@@ -43,6 +43,7 @@ func SyncRestaurants() *tasker.Task {
 					err = database.Get().CreateRestaurant(models.Restaurant{
 						DisneyID: apiRestaurant.DisneyID,
 						Name:     apiRestaurant.Name,
+						ImageURL: apiRestaurant.HeroMediaMobile.URL,
 					})
 					if err != nil {
 						log.Println(err)

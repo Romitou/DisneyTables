@@ -90,6 +90,9 @@ type Restaurant struct {
 	Name             string `json:"name"`
 	DisneyID         string `json:"id"`
 	BookingAvailable bool   `json:"drsApp"`
+	HeroMediaMobile  struct {
+		URL string `json:"url"`
+	} `json:"heroMediaMobile"`
 }
 
 type RestaurantResponse struct {
