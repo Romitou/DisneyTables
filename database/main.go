@@ -65,7 +65,7 @@ func (d *DisneyDatabase) PendingBookAlerts() ([]models.BookAlert, error) {
 	var bookAlerts []models.BookAlert
 	f := false
 	err := d.gorm.Where(models.BookAlert{
-		Status: &f,
+		Completed: &f,
 	}).Preload("Restaurant").Find(&bookAlerts).Error
 	return bookAlerts, err
 }
@@ -127,7 +127,7 @@ func (d *DisneyDatabase) RestaurantsToCheck() ([]DateToCheck, error) {
 	return datesToCheck, nil
 }
 
-func (d *DisneyDatabase) CreateBookAlert(bookAlert models.BookAlert) error {
+func (d *DisneyDatabase) CreateBookAlert(bookAlert *models.BookAlert) error {
 	return d.gorm.Create(&bookAlert).Error
 }
 

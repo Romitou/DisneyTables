@@ -12,6 +12,14 @@ import (
 	"strings"
 )
 
+type CreateBookAlert struct {
+	DiscordID          string `json:"discordId"`
+	RestaurantDisneyID string `json:"restaurantDisneyId"`
+	Date               string `json:"date"`
+	MealPeriod         string `json:"mealPeriod"`
+	PartyMix           int    `json:"partyMix"`
+}
+
 func Start() {
 	r := gin.Default()
 
@@ -31,6 +39,7 @@ func Start() {
 	r.GET("/restaurants", func(c *gin.Context) {
 		restaurants, err := database.Get().Restaurants()
 		if err != nil {
+			log.Println(err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -41,12 +50,14 @@ func Start() {
 		var search api.RestaurantAvailabilitySearch
 		err := c.ShouldBindBodyWith(&search, binding.JSON)
 		if err != nil {
+			log.Println(err)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 
 		availabilities, err := api.RestaurantAvailabilities(search)
 		if err != nil {
+			log.Println(err)
 			return
 		}
 
@@ -55,25 +66,53 @@ func Start() {
 	})
 
 	r.POST("/bookAlerts", func(c *gin.Context) {
-		var alert models.BookAlert
+		var alert CreateBookAlert
 		err := c.ShouldBindBodyWith(&alert, binding.JSON)
 		if err != nil {
+			log.Println(err)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 
-		err = database.Get().CreateBookAlert(alert)
+		restaurants, err := database.Get().Restaurants()
 		if err != nil {
+			log.Println(err)
+			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 
-		c.JSON(http.StatusOK, nil)
+		var foundRestaurant models.Restaurant
+		for _, restaurant := range restaurants {
+			if restaurant.DisneyID == alert.RestaurantDisneyID {
+				foundRestaurant = restaurant
+				break
+			}
+		}
+
+		completed := false
+		bookAlert := models.BookAlert{
+			DiscordID:  alert.DiscordID,
+			Restaurant: foundRestaurant,
+			Date:       alert.Date,
+			MealPeriod: alert.MealPeriod,
+			PartyMix:   alert.PartyMix,
+			Completed:  &completed,
+		}
+
+		err = database.Get().CreateBookAlert(&bookAlert)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		c.JSON(http.StatusOK, &bookAlert)
 		return
 	})
 
 	r.GET("/bookAlerts", func(c *gin.Context) {
 		bookAlerts, err := database.Get().PendingBookAlerts()
 		if err != nil {
+			log.Println(err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}

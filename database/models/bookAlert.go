@@ -5,18 +5,18 @@ import (
 )
 
 type BookAlert struct {
-	ID uint `gorm:"primarykey"`
+	ID uint `gorm:"primarykey" json:"id"`
 
-	Restaurant   Restaurant
-	RestaurantID uint `json:"restaurantId"`
+	Restaurant   Restaurant `json:"restaurant"`
+	RestaurantID uint       `json:"restaurantId"`
 
 	DiscordID string `json:"discordId"`
 
 	Date       string `json:"date"`
 	MealPeriod string `json:"mealPeriod"`
 	PartyMix   int    `json:"partyMix"`
-	Status     *bool
+	Completed  *bool  `json:"status"`
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
