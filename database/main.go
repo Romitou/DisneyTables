@@ -205,3 +205,15 @@ func (d *DisneyDatabase) DeactivateNotification(notification models.BookNotifica
 	notification.Active = nil
 	return d.gorm.Save(&notification).Error
 }
+
+func (d *DisneyDatabase) FindBookAlertByID(id uint) (models.BookAlert, error) {
+	var bookAlert models.BookAlert
+	err := d.gorm.Preload("Restaurant").First(&bookAlert, id).Error
+	return bookAlert, err
+}
+
+func (d *DisneyDatabase) CompleteBookAlert(alert *models.BookAlert) error {
+	completed := true
+	alert.Completed = &completed
+	return d.gorm.Save(&alert).Error
+}

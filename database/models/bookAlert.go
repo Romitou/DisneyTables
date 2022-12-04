@@ -15,7 +15,7 @@ type BookAlert struct {
 	Date       string `json:"date"`
 	MealPeriod string `json:"mealPeriod"`
 	PartyMix   int    `json:"partyMix"`
-	Completed  *bool  `json:"status"`
+	Completed  *bool  `json:"completed"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`

@@ -20,6 +20,10 @@ type CreateBookAlert struct {
 	PartyMix           int    `json:"partyMix"`
 }
 
+type CompleteBookAlert struct {
+	ID uint `json:"id"`
+}
+
 func Start() {
 	r := gin.Default()
 
@@ -102,6 +106,33 @@ func Start() {
 		err = database.Get().CreateBookAlert(&bookAlert)
 		if err != nil {
 			log.Println(err)
+			return
+		}
+
+		c.JSON(http.StatusOK, &bookAlert)
+		return
+	})
+
+	r.POST("/completeBookAlert", func(c *gin.Context) {
+		var completeBookAlert CompleteBookAlert
+		err := c.ShouldBindBodyWith(&completeBookAlert, binding.JSON)
+		if err != nil {
+			log.Println(err)
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		bookAlert, err := database.Get().FindBookAlertByID(completeBookAlert.ID)
+		if err != nil {
+			log.Println(err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		err = database.Get().CompleteBookAlert(&bookAlert)
+		if err != nil {
+			log.Println(err)
+			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 
