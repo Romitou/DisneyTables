@@ -22,31 +22,33 @@ func FetchRestaurantSlots() *tasker.Task {
 
 			for _, dateToCheck := range datesToCheck {
 				for _, restaurantToCheck := range dateToCheck.Restaurants {
-					restaurantAvailabilities, apiErr := api.RestaurantAvailabilities(api.RestaurantAvailabilitySearch{
-						Date:         dateToCheck.Date,
-						RestaurantID: restaurantToCheck.Restaurant.DisneyID,
-						PartyMix:     restaurantToCheck.LowerPartyMix,
-					})
-					if apiErr != nil {
-						log.Println(apiErr)
-						continue
-					}
+					for _, partyMix := range restaurantToCheck.PartyMixes {
+						restaurantAvailabilities, apiErr := api.RestaurantAvailabilities(api.RestaurantAvailabilitySearch{
+							Date:         dateToCheck.Date,
+							RestaurantID: restaurantToCheck.Restaurant.DisneyID,
+							PartyMix:     partyMix,
+						})
+						if apiErr != nil {
+							log.Println(apiErr)
+							continue
+						}
 
-					for _, availability := range restaurantAvailabilities {
-						for _, mealPeriod := range availability.MealPeriods {
-							for _, slot := range mealPeriod.MealSlots {
-								available := slot.Available == "true"
-								err = database.Get().UpsertBookSlot(models.BookSlot{
-									RestaurantID: restaurantToCheck.Restaurant.ID,
-									Date:         dateToCheck.Date,
-									MealPeriod:   mealPeriod.MealPeriod,
-									PartyMix:     restaurantToCheck.LowerPartyMix,
-									Available:    &available,
-									Hour:         slot.Time,
-								})
-								if err != nil {
-									log.Println(err)
-									continue
+						for _, availability := range restaurantAvailabilities {
+							for _, mealPeriod := range availability.MealPeriods {
+								for _, slot := range mealPeriod.MealSlots {
+									available := slot.Available == "true"
+									err = database.Get().UpsertBookSlot(models.BookSlot{
+										RestaurantID: restaurantToCheck.Restaurant.ID,
+										Date:         dateToCheck.Date,
+										MealPeriod:   mealPeriod.MealPeriod,
+										PartyMix:     partyMix,
+										Available:    &available,
+										Hour:         slot.Time,
+									})
+									if err != nil {
+										log.Println(err)
+										continue
+									}
 								}
 							}
 						}

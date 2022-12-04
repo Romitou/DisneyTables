@@ -76,8 +76,8 @@ type DateToCheck struct {
 }
 
 type RestaurantToCheck struct {
-	Restaurant    models.Restaurant
-	LowerPartyMix int
+	Restaurant models.Restaurant
+	PartyMixes []int
 }
 
 func (d *DisneyDatabase) RestaurantsToCheck() ([]DateToCheck, error) {
@@ -96,16 +96,14 @@ func (d *DisneyDatabase) RestaurantsToCheck() ([]DateToCheck, error) {
 				for j, restaurantToCheck := range dateToCheck.Restaurants {
 					if restaurantToCheck.Restaurant.ID == bookAlert.Restaurant.ID {
 						foundRestaurant = true
-						if restaurantToCheck.LowerPartyMix > bookAlert.PartyMix {
-							datesToCheck[i].Restaurants[j].LowerPartyMix = bookAlert.PartyMix
-						}
+						dateToCheck.Restaurants[j].PartyMixes = append(dateToCheck.Restaurants[j].PartyMixes, bookAlert.PartyMix)
 						break
 					}
 				}
 				if !foundRestaurant {
 					datesToCheck[i].Restaurants = append(datesToCheck[i].Restaurants, RestaurantToCheck{
-						Restaurant:    bookAlert.Restaurant,
-						LowerPartyMix: bookAlert.PartyMix,
+						Restaurant: bookAlert.Restaurant,
+						PartyMixes: []int{bookAlert.PartyMix},
 					})
 				}
 				break
@@ -116,8 +114,8 @@ func (d *DisneyDatabase) RestaurantsToCheck() ([]DateToCheck, error) {
 				Date: bookAlert.Date,
 				Restaurants: []RestaurantToCheck{
 					{
-						Restaurant:    bookAlert.Restaurant,
-						LowerPartyMix: bookAlert.PartyMix,
+						Restaurant: bookAlert.Restaurant,
+						PartyMixes: []int{bookAlert.PartyMix},
 					},
 				},
 			})
