@@ -1,6 +1,7 @@
 package webserver
 
 import (
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/romitou/disneytables/api"
@@ -43,7 +44,7 @@ func Start() {
 	r.GET("/restaurants", func(c *gin.Context) {
 		restaurants, err := database.Get().Restaurants()
 		if err != nil {
-			log.Println(err)
+			sentry.CaptureException(err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -54,14 +55,14 @@ func Start() {
 		var search api.RestaurantAvailabilitySearch
 		err := c.ShouldBindBodyWith(&search, binding.JSON)
 		if err != nil {
-			log.Println(err)
+			sentry.CaptureException(err)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 
 		availabilities, err := api.RestaurantAvailabilities(search)
 		if err != nil {
-			log.Println(err)
+			sentry.CaptureException(err)
 			return
 		}
 
@@ -73,14 +74,14 @@ func Start() {
 		var alert CreateBookAlert
 		err := c.ShouldBindBodyWith(&alert, binding.JSON)
 		if err != nil {
-			log.Println(err)
+			sentry.CaptureException(err)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 
 		restaurants, err := database.Get().Restaurants()
 		if err != nil {
-			log.Println(err)
+			sentry.CaptureException(err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -105,7 +106,7 @@ func Start() {
 
 		err = database.Get().CreateBookAlert(&bookAlert)
 		if err != nil {
-			log.Println(err)
+			sentry.CaptureException(err)
 			return
 		}
 
@@ -117,21 +118,21 @@ func Start() {
 		var completeBookAlert CompleteBookAlert
 		err := c.ShouldBindBodyWith(&completeBookAlert, binding.JSON)
 		if err != nil {
-			log.Println(err)
+			sentry.CaptureException(err)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 
 		bookAlert, err := database.Get().FindBookAlertByID(completeBookAlert.ID)
 		if err != nil {
-			log.Println(err)
+			sentry.CaptureException(err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 
 		err = database.Get().CompleteBookAlert(&bookAlert)
 		if err != nil {
-			log.Println(err)
+			sentry.CaptureException(err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -143,7 +144,7 @@ func Start() {
 	r.GET("/bookAlerts", func(c *gin.Context) {
 		bookAlerts, err := database.Get().PendingBookAlerts()
 		if err != nil {
-			log.Println(err)
+			sentry.CaptureException(err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -153,6 +154,6 @@ func Start() {
 	log.Println("Starting webserver...")
 	err := r.Run("0.0.0.0:8080")
 	if err != nil {
-		log.Fatal(err)
+		sentry.CaptureException(err)
 	}
 }

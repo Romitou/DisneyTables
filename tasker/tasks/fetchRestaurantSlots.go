@@ -1,12 +1,12 @@
 package tasks
 
 import (
+	"github.com/getsentry/sentry-go"
 	"github.com/romitou/disneytables/api"
 	"github.com/romitou/disneytables/core"
 	"github.com/romitou/disneytables/database"
 	"github.com/romitou/disneytables/database/models"
 	"github.com/romitou/disneytables/tasker"
-	"log"
 )
 
 func FetchRestaurantSlots() *tasker.Task {
@@ -16,7 +16,7 @@ func FetchRestaurantSlots() *tasker.Task {
 		Run: func() {
 			datesToCheck, err := database.Get().RestaurantsToCheck()
 			if err != nil {
-				log.Println(err)
+				sentry.CaptureException(err)
 				return
 			}
 
@@ -29,7 +29,7 @@ func FetchRestaurantSlots() *tasker.Task {
 							PartyMix:     partyMix,
 						})
 						if apiErr != nil {
-							log.Println(apiErr)
+							sentry.CaptureException(apiErr)
 							continue
 						}
 
@@ -46,7 +46,7 @@ func FetchRestaurantSlots() *tasker.Task {
 										Hour:         slot.Time,
 									})
 									if err != nil {
-										log.Println(err)
+										sentry.CaptureException(err)
 										continue
 									}
 								}
@@ -58,11 +58,13 @@ func FetchRestaurantSlots() *tasker.Task {
 
 			errors := core.CreateNotifications()
 			if errors != nil {
-				log.Println(errors)
+				for _, err := range errors {
+					sentry.CaptureException(err)
+				}
 			}
 			err = core.CleanupActiveNotifications()
 			if err != nil {
-				log.Println(err)
+				sentry.CaptureException(err)
 			}
 		},
 	}

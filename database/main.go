@@ -2,6 +2,7 @@ package database
 
 import (
 	"errors"
+	"github.com/getsentry/sentry-go"
 	"github.com/romitou/disneytables/database/models"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -33,12 +34,12 @@ func (d *DisneyDatabase) Connect() {
 		Logger: logger.Default.LogMode(loggerMode),
 	})
 	if err != nil {
-		log.Fatal(err)
+		sentry.CaptureException(err)
 	}
 
 	err = database.AutoMigrate(&models.BookAlert{}, &models.AuthDetails{}, &models.Restaurant{}, &models.BookSlot{}, &models.BookNotification{})
 	if err != nil {
-		log.Println(err)
+		sentry.CaptureException(err)
 	}
 
 	d.gorm = database
