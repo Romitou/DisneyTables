@@ -65,7 +65,7 @@ func (d *DisneyDatabase) PendingBookAlerts() ([]models.BookAlert, error) {
 	var bookAlerts []models.BookAlert
 	f := false
 	err := d.gorm.Where(models.BookAlert{
-		Status: &f,
+		Completed: &f,
 	}).Preload("Restaurant").Find(&bookAlerts).Error
 	return bookAlerts, err
 }
@@ -76,8 +76,8 @@ type DateToCheck struct {
 }
 
 type RestaurantToCheck struct {
-	Restaurant    models.Restaurant
-	LowerPartyMix int
+	Restaurant models.Restaurant
+	PartyMixes []int
 }
 
 func (d *DisneyDatabase) RestaurantsToCheck() ([]DateToCheck, error) {
@@ -96,16 +96,14 @@ func (d *DisneyDatabase) RestaurantsToCheck() ([]DateToCheck, error) {
 				for j, restaurantToCheck := range dateToCheck.Restaurants {
 					if restaurantToCheck.Restaurant.ID == bookAlert.Restaurant.ID {
 						foundRestaurant = true
-						if restaurantToCheck.LowerPartyMix > bookAlert.PartyMix {
-							datesToCheck[i].Restaurants[j].LowerPartyMix = bookAlert.PartyMix
-						}
+						dateToCheck.Restaurants[j].PartyMixes = append(dateToCheck.Restaurants[j].PartyMixes, bookAlert.PartyMix)
 						break
 					}
 				}
 				if !foundRestaurant {
 					datesToCheck[i].Restaurants = append(datesToCheck[i].Restaurants, RestaurantToCheck{
-						Restaurant:    bookAlert.Restaurant,
-						LowerPartyMix: bookAlert.PartyMix,
+						Restaurant: bookAlert.Restaurant,
+						PartyMixes: []int{bookAlert.PartyMix},
 					})
 				}
 				break
@@ -116,8 +114,8 @@ func (d *DisneyDatabase) RestaurantsToCheck() ([]DateToCheck, error) {
 				Date: bookAlert.Date,
 				Restaurants: []RestaurantToCheck{
 					{
-						Restaurant:    bookAlert.Restaurant,
-						LowerPartyMix: bookAlert.PartyMix,
+						Restaurant: bookAlert.Restaurant,
+						PartyMixes: []int{bookAlert.PartyMix},
 					},
 				},
 			})
@@ -127,7 +125,7 @@ func (d *DisneyDatabase) RestaurantsToCheck() ([]DateToCheck, error) {
 	return datesToCheck, nil
 }
 
-func (d *DisneyDatabase) CreateBookAlert(bookAlert models.BookAlert) error {
+func (d *DisneyDatabase) CreateBookAlert(bookAlert *models.BookAlert) error {
 	return d.gorm.Create(&bookAlert).Error
 }
 
@@ -204,4 +202,16 @@ func (d *DisneyDatabase) ActiveNotifications() ([]models.BookNotification, error
 func (d *DisneyDatabase) DeactivateNotification(notification models.BookNotification) error {
 	notification.Active = nil
 	return d.gorm.Save(&notification).Error
+}
+
+func (d *DisneyDatabase) FindBookAlertByID(id uint) (models.BookAlert, error) {
+	var bookAlert models.BookAlert
+	err := d.gorm.Preload("Restaurant").First(&bookAlert, id).Error
+	return bookAlert, err
+}
+
+func (d *DisneyDatabase) CompleteBookAlert(alert *models.BookAlert) error {
+	completed := true
+	alert.Completed = &completed
+	return d.gorm.Save(&alert).Error
 }

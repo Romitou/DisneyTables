@@ -5,13 +5,13 @@ import "time"
 type BookNotification struct {
 	ID uint `gorm:"primarykey"`
 
-	BookAlert   BookAlert
-	BookAlertID uint
+	BookAlert   BookAlert `json:"bookAlert"`
+	BookAlertID uint      `json:"bookAlertId"`
 
-	BookSlot   BookSlot
-	BookSlotID uint
+	BookSlot   BookSlot `json:"bookSlot"`
+	BookSlotID uint     `json:"bookSlotId"`
 
-	Active *bool
+	Active *bool `json:"active"`
 
-	CreatedAt time.Time
+	CreatedAt time.Time `json:"createdAt"`
 }

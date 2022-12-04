@@ -69,6 +69,7 @@ func CleanupActiveNotifications() error {
 
 func SendNotification(notification models.BookNotification) error {
 	redisErr := redis.Get().SendBookNotification(redis.BookNotification{
+		BookAlertID:    notification.BookAlert.ID,
 		DiscordID:      notification.BookAlert.DiscordID,
 		RestaurantName: notification.BookSlot.Restaurant.Name,
 		Date:           notification.BookSlot.Date,

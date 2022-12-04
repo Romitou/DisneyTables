@@ -28,6 +28,7 @@ func (r *DisneyRedis) Connect() {
 }
 
 type BookNotification struct {
+	BookAlertID    uint   `json:"bookAlertId"`
 	DiscordID      string `json:"discordId"`
 	RestaurantName string `json:"restaurantName"`
 	Date           string `json:"date"`
