@@ -29,7 +29,12 @@ func FetchRestaurantSlots() *tasker.Task {
 							PartyMix:     partyMix,
 						})
 						if apiErr != nil {
-							sentry.CaptureException(apiErr)
+							sentry.WithScope(func(scope *sentry.Scope) {
+								scope.SetExtra("date", dateToCheck.Date)
+								scope.SetExtra("restaurantId", restaurantToCheck.Restaurant.DisneyID)
+								scope.SetExtra("partyMix", partyMix)
+								sentry.CaptureException(apiErr)
+							})
 							continue
 						}
 

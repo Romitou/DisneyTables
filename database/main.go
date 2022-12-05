@@ -201,7 +201,8 @@ func (d *DisneyDatabase) ActiveNotifications() ([]models.BookNotification, error
 }
 
 func (d *DisneyDatabase) DeactivateNotification(notification models.BookNotification) error {
-	notification.Active = nil
+	active := false
+	notification.Active = &active
 	return d.gorm.Save(&notification).Error
 }
 
