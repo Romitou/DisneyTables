@@ -1,11 +1,11 @@
 package tasks
 
 import (
+	"github.com/getsentry/sentry-go"
 	"github.com/romitou/disneytables/api"
 	"github.com/romitou/disneytables/database"
 	"github.com/romitou/disneytables/database/models"
 	"github.com/romitou/disneytables/tasker"
-	"log"
 )
 
 func RenewAuthDetails() *tasker.Task {
@@ -15,13 +15,13 @@ func RenewAuthDetails() *tasker.Task {
 		Run: func() {
 			authDetails, err := database.Get().LastAuthDetails()
 			if err != nil {
-				log.Println(err)
+				sentry.CaptureException(err)
 				return
 			}
 
 			disneyToken, err := api.RefreshAuth(authDetails.RefreshToken)
 			if err != nil {
-				log.Println(err)
+				sentry.CaptureException(err)
 				return
 			}
 
@@ -30,7 +30,7 @@ func RenewAuthDetails() *tasker.Task {
 				RefreshToken: disneyToken.RefreshToken,
 			})
 			if err != nil {
-				log.Println(err)
+				sentry.CaptureException(err)
 				return
 			}
 		},

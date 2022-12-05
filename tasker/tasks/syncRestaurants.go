@@ -1,11 +1,11 @@
 package tasks
 
 import (
+	"github.com/getsentry/sentry-go"
 	"github.com/romitou/disneytables/api"
 	"github.com/romitou/disneytables/database"
 	"github.com/romitou/disneytables/database/models"
 	"github.com/romitou/disneytables/tasker"
-	"log"
 )
 
 func SyncRestaurants() *tasker.Task {
@@ -15,13 +15,13 @@ func SyncRestaurants() *tasker.Task {
 		Run: func() {
 			apiRestaurants, err := api.Restaurants()
 			if err != nil {
-				log.Println(err)
+				sentry.CaptureException(err)
 				return
 			}
 
 			databaseRestaurants, err := database.Get().Restaurants()
 			if err != nil {
-				log.Println(err)
+				sentry.CaptureException(err)
 				return
 			}
 
@@ -46,7 +46,7 @@ func SyncRestaurants() *tasker.Task {
 						ImageURL: apiRestaurant.HeroMediaMobile.URL,
 					})
 					if err != nil {
-						log.Println(err)
+						sentry.CaptureException(err)
 						continue
 					}
 				}

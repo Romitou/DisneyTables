@@ -1,15 +1,16 @@
 package webserver
 
 import (
+	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/romitou/disneytables/api"
 	"github.com/romitou/disneytables/database"
 	"github.com/romitou/disneytables/database/models"
+	"github.com/romitou/disneytables/webserver/middlewares"
 	"log"
 	"net/http"
-	"os"
-	"strings"
 )
 
 type CreateBookAlert struct {
@@ -27,23 +28,13 @@ type CompleteBookAlert struct {
 func Start() {
 	r := gin.Default()
 
-	r.Use(func(context *gin.Context) {
-		authorization := context.GetHeader("Authorization")
-		if authorization == "" {
-			context.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-		if strings.TrimPrefix(authorization, "Bearer ") != os.Getenv("WEBSERVER_TOKEN") {
-			context.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-		context.Next()
-	})
+	r.Use(middlewares.Auth())
+	r.Use(middlewares.Sentry())
 
 	r.GET("/restaurants", func(c *gin.Context) {
 		restaurants, err := database.Get().Restaurants()
 		if err != nil {
-			log.Println(err)
+			sentrygin.GetHubFromContext(c).CaptureException(err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -54,14 +45,14 @@ func Start() {
 		var search api.RestaurantAvailabilitySearch
 		err := c.ShouldBindBodyWith(&search, binding.JSON)
 		if err != nil {
-			log.Println(err)
+			sentrygin.GetHubFromContext(c).CaptureException(err)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 
 		availabilities, err := api.RestaurantAvailabilities(search)
 		if err != nil {
-			log.Println(err)
+			sentrygin.GetHubFromContext(c).CaptureException(err)
 			return
 		}
 
@@ -73,14 +64,14 @@ func Start() {
 		var alert CreateBookAlert
 		err := c.ShouldBindBodyWith(&alert, binding.JSON)
 		if err != nil {
-			log.Println(err)
+			sentrygin.GetHubFromContext(c).CaptureException(err)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 
 		restaurants, err := database.Get().Restaurants()
 		if err != nil {
-			log.Println(err)
+			sentrygin.GetHubFromContext(c).CaptureException(err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -105,7 +96,7 @@ func Start() {
 
 		err = database.Get().CreateBookAlert(&bookAlert)
 		if err != nil {
-			log.Println(err)
+			sentrygin.GetHubFromContext(c).CaptureException(err)
 			return
 		}
 
@@ -117,21 +108,21 @@ func Start() {
 		var completeBookAlert CompleteBookAlert
 		err := c.ShouldBindBodyWith(&completeBookAlert, binding.JSON)
 		if err != nil {
-			log.Println(err)
+			sentrygin.GetHubFromContext(c).CaptureException(err)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 
 		bookAlert, err := database.Get().FindBookAlertByID(completeBookAlert.ID)
 		if err != nil {
-			log.Println(err)
+			sentrygin.GetHubFromContext(c).CaptureException(err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 
 		err = database.Get().CompleteBookAlert(&bookAlert)
 		if err != nil {
-			log.Println(err)
+			sentrygin.GetHubFromContext(c).CaptureException(err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -143,7 +134,7 @@ func Start() {
 	r.GET("/bookAlerts", func(c *gin.Context) {
 		bookAlerts, err := database.Get().PendingBookAlerts()
 		if err != nil {
-			log.Println(err)
+			sentrygin.GetHubFromContext(c).CaptureException(err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -153,6 +144,6 @@ func Start() {
 	log.Println("Starting webserver...")
 	err := r.Run("0.0.0.0:8080")
 	if err != nil {
-		log.Fatal(err)
+		sentry.CaptureException(err)
 	}
 }

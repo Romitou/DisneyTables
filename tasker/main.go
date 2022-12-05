@@ -1,6 +1,7 @@
 package tasker
 
 import (
+	"github.com/getsentry/sentry-go"
 	"github.com/go-co-op/gocron"
 	"log"
 	"time"
@@ -35,6 +36,7 @@ func (t *Tasker) RegisterTasks(tasks ...*Task) {
 func (t *Tasker) Start() {
 	location, err := time.LoadLocation("Europe/Paris")
 	if err != nil {
+		sentry.CaptureException(err)
 		location = time.UTC
 	}
 
@@ -46,7 +48,7 @@ func (t *Tasker) Start() {
 		}
 		_, taskErr := job.Do(task.Run)
 		if taskErr != nil {
-			log.Println(taskErr)
+			sentry.CaptureException(taskErr)
 			continue
 		}
 	}
