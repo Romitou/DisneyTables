@@ -7,6 +7,7 @@ import (
 	"github.com/romitou/disneytables/database"
 	"github.com/romitou/disneytables/database/models"
 	"github.com/romitou/disneytables/tasker"
+	"log"
 	"time"
 )
 
@@ -23,10 +24,13 @@ func FetchRestaurantSlots() *tasker.Task {
 				return
 			}
 
+			log.Println("Checking", len(bookAlerts), "alerts...")
+
 			timeToWait := 0
 			for i := range bookAlerts {
 				bookAlert := bookAlerts[i]
 				time.AfterFunc(time.Duration(timeToWait)*time.Second, func() {
+					log.Println("Checking alert #", bookAlert.ID, " for ", bookAlert.Restaurant.Name, " on ", bookAlert.Date, " for ", bookAlert.PartyMix, " peoples for ", bookAlert.MealPeriod)
 					restaurantAvailabilities, apiErr := api.RestaurantAvailabilities(api.RestaurantAvailabilitySearch{
 						Date:         bookAlert.Date,
 						RestaurantID: bookAlert.Restaurant.DisneyID,
@@ -36,7 +40,7 @@ func FetchRestaurantSlots() *tasker.Task {
 						sentry.WithScope(func(scope *sentry.Scope) {
 							scope.SetExtra("date", bookAlert.Date)
 							scope.SetExtra("restaurantId", bookAlert.Restaurant.DisneyID)
-							scope.SetExtra("partyMix", bookAlert)
+							scope.SetExtra("partyMix", bookAlert.PartyMix)
 							sentry.CaptureException(apiErr)
 						})
 						return
