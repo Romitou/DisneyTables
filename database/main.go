@@ -229,9 +229,9 @@ func (d *DisneyDatabase) CompleteBookAlert(alert *models.BookAlert) error {
 }
 
 type DisneyStatistics struct {
-	BookAlertsCount        int
-	BookSlotsCount         int
-	SentNotificationsCount int
+	BookAlertsCount        int `json:"bookAlertsCount"`
+	BookSlotsCount         int `json:"bookSlotsCount"`
+	SentNotificationsCount int `json:"sentNotificationsCount"`
 }
 
 func (d *DisneyDatabase) Statistics() (DisneyStatistics, error) {
