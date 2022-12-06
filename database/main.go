@@ -227,3 +227,80 @@ func (d *DisneyDatabase) CompleteBookAlert(alert *models.BookAlert) error {
 	alert.Completed = &completed
 	return d.gorm.Save(&alert).Error
 }
+
+type DisneyStatistics struct {
+	BookAlertsCount        int `json:"bookAlertsCount"`
+	BookSlotsCount         int `json:"bookSlotsCount"`
+	SentNotificationsCount int `json:"sentNotificationsCount"`
+}
+
+func (d *DisneyDatabase) Statistics() (DisneyStatistics, error) {
+	var bookAlertsCount int64
+	err := d.gorm.Model(&models.BookAlert{}).Count(&bookAlertsCount).Error
+	if err != nil {
+		return DisneyStatistics{}, err
+	}
+
+	var bookSlotsCount int64
+	err = d.gorm.Model(&models.BookSlot{}).Count(&bookSlotsCount).Error
+	if err != nil {
+		return DisneyStatistics{}, err
+	}
+
+	var sentNotificationsCount int64
+	err = d.gorm.Model(&models.BookNotification{}).Count(&sentNotificationsCount).Error
+	if err != nil {
+		return DisneyStatistics{}, err
+	}
+
+	return DisneyStatistics{
+		BookAlertsCount:        int(bookAlertsCount),
+		BookSlotsCount:         int(bookSlotsCount),
+		SentNotificationsCount: int(sentNotificationsCount),
+	}, nil
+}
+
+type DailyReport struct {
+	HighestCheckInterval int `json:"highestCheckInterval"`
+	NewBookAlerts        int `json:"newBookAlerts"`
+	NewBookSlots         int `json:"newBookSlots"`
+	NewNotifications     int `json:"newNotifications"`
+}
+
+func (d *DisneyDatabase) DailyReport() (*DailyReport, error) {
+	dailyReport := &DailyReport{}
+
+	var bookAlert models.BookAlert
+	err := d.gorm.Where("completed IS false").Order("checked_at ASC").First(&bookAlert).Error
+	if err != nil {
+		return nil, err
+	}
+	dailyReport.HighestCheckInterval = int(time.Since(bookAlert.CheckedAt).Minutes())
+
+	var newBookAlerts int64
+	err = last24HoursFilter(d.gorm).Model(&models.BookAlert{}).Count(&newBookAlerts).Error
+	if err != nil {
+		return nil, err
+	}
+	dailyReport.NewBookAlerts = int(newBookAlerts)
+
+	var newBookSlots int64
+	err = last24HoursFilter(d.gorm).Model(&models.BookSlot{}).Count(&newBookSlots).Error
+	if err != nil {
+		return nil, err
+	}
+	dailyReport.NewBookSlots = int(newBookSlots)
+
+	var newNotifications int64
+	err = last24HoursFilter(d.gorm).Model(&models.BookNotification{}).Count(&newNotifications).Error
+	if err != nil {
+		return nil, err
+	}
+	dailyReport.NewNotifications = int(newNotifications)
+
+	return dailyReport, nil
+}
+
+func last24HoursFilter(db *gorm.DB) *gorm.DB {
+	return db.Where("created_at > ?", time.Now().Add(-24*time.Hour))
+}
