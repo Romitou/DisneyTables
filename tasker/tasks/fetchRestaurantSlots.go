@@ -7,58 +7,49 @@ import (
 	"github.com/romitou/disneytables/database"
 	"github.com/romitou/disneytables/database/models"
 	"github.com/romitou/disneytables/tasker"
+	"time"
 )
+
+const MaxRequestsPerMinute = 5
 
 func FetchRestaurantSlots() *tasker.Task {
 	return &tasker.Task{
-		Cron:        "*/5 * * * *",
-		Immediately: true,
+		Cron:        "* * * * *",
+		Immediately: false,
 		Run: func() {
-			datesToCheck, err := database.Get().RestaurantsToCheck()
+			bookAlerts, err := database.Get().ActiveAlertsToCheck(MaxRequestsPerMinute)
 			if err != nil {
 				sentry.CaptureException(err)
 				return
 			}
 
-			for _, dateToCheck := range datesToCheck {
-				for _, restaurantToCheck := range dateToCheck.Restaurants {
-					for _, partyMix := range restaurantToCheck.PartyMixes {
-						restaurantAvailabilities, apiErr := api.RestaurantAvailabilities(api.RestaurantAvailabilitySearch{
-							Date:         dateToCheck.Date,
-							RestaurantID: restaurantToCheck.Restaurant.DisneyID,
-							PartyMix:     partyMix,
+			timeToWait := 0
+			for i := range bookAlerts {
+				bookAlert := bookAlerts[i]
+				time.AfterFunc(time.Duration(timeToWait)*time.Second, func() {
+					restaurantAvailabilities, apiErr := api.RestaurantAvailabilities(api.RestaurantAvailabilitySearch{
+						Date:         bookAlert.Date,
+						RestaurantID: bookAlert.Restaurant.DisneyID,
+						PartyMix:     bookAlert.PartyMix,
+					})
+					if apiErr != nil {
+						sentry.WithScope(func(scope *sentry.Scope) {
+							scope.SetExtra("date", bookAlert.Date)
+							scope.SetExtra("restaurantId", bookAlert.Restaurant.DisneyID)
+							scope.SetExtra("partyMix", bookAlert)
+							sentry.CaptureException(apiErr)
 						})
-						if apiErr != nil {
-							sentry.WithScope(func(scope *sentry.Scope) {
-								scope.SetExtra("date", dateToCheck.Date)
-								scope.SetExtra("restaurantId", restaurantToCheck.Restaurant.DisneyID)
-								scope.SetExtra("partyMix", partyMix)
-								sentry.CaptureException(apiErr)
-							})
-							continue
-						}
-
-						for _, availability := range restaurantAvailabilities {
-							for _, mealPeriod := range availability.MealPeriods {
-								for _, slot := range mealPeriod.MealSlots {
-									available := slot.Available == "true"
-									err = database.Get().UpsertBookSlot(models.BookSlot{
-										RestaurantID: restaurantToCheck.Restaurant.ID,
-										Date:         dateToCheck.Date,
-										MealPeriod:   mealPeriod.MealPeriod,
-										PartyMix:     partyMix,
-										Available:    &available,
-										Hour:         slot.Time,
-									})
-									if err != nil {
-										sentry.CaptureException(err)
-										continue
-									}
-								}
-							}
-						}
+						return
 					}
-				}
+
+					err = database.Get().MarkAlertAsChecked(bookAlert)
+					if err != nil {
+						sentry.CaptureException(err)
+					}
+
+					InsertAvailabilities(restaurantAvailabilities, bookAlert)
+				})
+				timeToWait += int(time.Minute.Seconds() / MaxRequestsPerMinute)
 			}
 
 			errors := core.CreateNotifications()
@@ -72,5 +63,32 @@ func FetchRestaurantSlots() *tasker.Task {
 				sentry.CaptureException(err)
 			}
 		},
+	}
+}
+
+func InsertAvailabilities(restaurantAvailabilities []api.RestaurantAvailability, bookAlert models.BookAlert) {
+	for _, availability := range restaurantAvailabilities {
+		for _, mealPeriod := range availability.MealPeriods {
+			for _, slot := range mealPeriod.MealSlots {
+				available := slot.Available == "true"
+				err := database.Get().UpsertBookSlot(models.BookSlot{
+					RestaurantID: bookAlert.Restaurant.ID,
+					Date:         availability.Date,
+					MealPeriod:   mealPeriod.MealPeriod,
+					PartyMix:     bookAlert.PartyMix,
+					Available:    &available,
+					Hour:         slot.Time,
+				})
+				if err != nil {
+					sentry.WithScope(func(scope *sentry.Scope) {
+						scope.SetExtra("date", bookAlert.Date)
+						scope.SetExtra("restaurantId", bookAlert.Restaurant.DisneyID)
+						scope.SetExtra("partyMix", bookAlert)
+						sentry.CaptureException(err)
+					})
+					continue
+				}
+			}
+		}
 	}
 }

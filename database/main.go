@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm/logger"
 	"log"
 	"os"
+	"time"
 )
 
 var disneyDatabase *DisneyDatabase
@@ -81,50 +82,58 @@ type RestaurantToCheck struct {
 	PartyMixes []int
 }
 
-func (d *DisneyDatabase) RestaurantsToCheck() ([]DateToCheck, error) {
-	bookAlerts, err := d.PendingBookAlerts()
-	if err != nil {
-		return nil, err
-	}
+func (d *DisneyDatabase) ActiveAlertsToCheck(limit int) ([]models.BookAlert, error) {
+	checkCondition := time.Now().Add(-10 * time.Minute)
 
-	var datesToCheck []DateToCheck
-	for _, bookAlert := range bookAlerts {
-		var found bool
-		for i, dateToCheck := range datesToCheck {
-			if dateToCheck.Date == bookAlert.Date {
-				found = true
-				var foundRestaurant bool
-				for j, restaurantToCheck := range dateToCheck.Restaurants {
-					if restaurantToCheck.Restaurant.ID == bookAlert.Restaurant.ID {
-						foundRestaurant = true
-						dateToCheck.Restaurants[j].PartyMixes = append(dateToCheck.Restaurants[j].PartyMixes, bookAlert.PartyMix)
-						break
-					}
-				}
-				if !foundRestaurant {
-					datesToCheck[i].Restaurants = append(datesToCheck[i].Restaurants, RestaurantToCheck{
-						Restaurant: bookAlert.Restaurant,
-						PartyMixes: []int{bookAlert.PartyMix},
-					})
-				}
-				break
-			}
-		}
-		if !found {
-			datesToCheck = append(datesToCheck, DateToCheck{
-				Date: bookAlert.Date,
-				Restaurants: []RestaurantToCheck{
-					{
-						Restaurant: bookAlert.Restaurant,
-						PartyMixes: []int{bookAlert.PartyMix},
-					},
-				},
-			})
-		}
-	}
-
-	return datesToCheck, nil
+	var bookAlerts []models.BookAlert
+	err := d.gorm.Where("checked_at < ?", checkCondition).Order("checked_at").Limit(limit).Preload("Restaurant").Find(&bookAlerts).Error
+	return bookAlerts, err
 }
+
+func (d *DisneyDatabase) MarkAlertAsChecked(alert models.BookAlert) error {
+	alert.CheckedAt = time.Now()
+	return d.gorm.Save(&alert).Error
+}
+
+//func (d *DisneyDatabase) RestaurantsToCheck(bookAlerts []models.BookAlert) ([]DateToCheck, error) {
+//	var datesToCheck []DateToCheck
+//	for _, bookAlert := range bookAlerts {
+//		var found bool
+//		for i, dateToCheck := range datesToCheck {
+//			if dateToCheck.Date == bookAlert.Date {
+//				found = true
+//				var foundRestaurant bool
+//				for j, restaurantToCheck := range dateToCheck.Restaurants {
+//					if restaurantToCheck.Restaurant.ID == bookAlert.Restaurant.ID {
+//						foundRestaurant = true
+//						dateToCheck.Restaurants[j].PartyMixes = append(dateToCheck.Restaurants[j].PartyMixes, bookAlert.PartyMix)
+//						break
+//					}
+//				}
+//				if !foundRestaurant {
+//					datesToCheck[i].Restaurants = append(datesToCheck[i].Restaurants, RestaurantToCheck{
+//						Restaurant: bookAlert.Restaurant,
+//						PartyMixes: []int{bookAlert.PartyMix},
+//					})
+//				}
+//				break
+//			}
+//		}
+//		if !found {
+//			datesToCheck = append(datesToCheck, DateToCheck{
+//				Date: bookAlert.Date,
+//				Restaurants: []RestaurantToCheck{
+//					{
+//						Restaurant: bookAlert.Restaurant,
+//						PartyMixes: []int{bookAlert.PartyMix},
+//					},
+//				},
+//			})
+//		}
+//	}
+//
+//	return datesToCheck, nil
+//}
 
 func (d *DisneyDatabase) CreateBookAlert(bookAlert *models.BookAlert) error {
 	return d.gorm.Create(&bookAlert).Error
