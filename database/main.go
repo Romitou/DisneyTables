@@ -84,9 +84,10 @@ type RestaurantToCheck struct {
 
 func (d *DisneyDatabase) ActiveAlertsToCheck(limit int) ([]models.BookAlert, error) {
 	checkCondition := time.Now().Add(-10 * time.Minute)
+	completed := false
 
 	var bookAlerts []models.BookAlert
-	err := d.gorm.Where("checked_at < ?", checkCondition).Order("checked_at").Limit(limit).Preload("Restaurant").Find(&bookAlerts).Error
+	err := d.gorm.Where("checked_at < ? AND completed = ?", checkCondition, &completed).Order("checked_at").Limit(limit).Preload("Restaurant").Debug().Find(&bookAlerts).Error
 	return bookAlerts, err
 }
 
