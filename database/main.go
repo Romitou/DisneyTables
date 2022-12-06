@@ -227,3 +227,35 @@ func (d *DisneyDatabase) CompleteBookAlert(alert *models.BookAlert) error {
 	alert.Completed = &completed
 	return d.gorm.Save(&alert).Error
 }
+
+type DisneyStatistics struct {
+	BookAlertsCount        int
+	BookSlotsCount         int
+	SentNotificationsCount int
+}
+
+func (d *DisneyDatabase) Statistics() (DisneyStatistics, error) {
+	var bookAlertsCount int64
+	err := d.gorm.Model(&models.BookAlert{}).Count(&bookAlertsCount).Error
+	if err != nil {
+		return DisneyStatistics{}, err
+	}
+
+	var bookSlotsCount int64
+	err = d.gorm.Model(&models.BookSlot{}).Count(&bookSlotsCount).Error
+	if err != nil {
+		return DisneyStatistics{}, err
+	}
+
+	var sentNotificationsCount int64
+	err = d.gorm.Model(&models.BookNotification{}).Count(&sentNotificationsCount).Error
+	if err != nil {
+		return DisneyStatistics{}, err
+	}
+
+	return DisneyStatistics{
+		BookAlertsCount:        int(bookAlertsCount),
+		BookSlotsCount:         int(bookSlotsCount),
+		SentNotificationsCount: int(sentNotificationsCount),
+	}, nil
+}
