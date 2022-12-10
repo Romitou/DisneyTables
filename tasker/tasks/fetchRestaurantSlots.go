@@ -8,17 +8,32 @@ import (
 	"github.com/romitou/disneytables/database/models"
 	"github.com/romitou/disneytables/tasker"
 	"log"
+	"os"
+	"strconv"
 	"time"
 )
 
-const MaxRequestsPerMinute = 5
+const DefaultMaxRequestsPerMinute = 5
 
 func FetchRestaurantSlots() *tasker.Task {
 	return &tasker.Task{
 		Cron:        "* * * * *",
 		Immediately: false,
 		Run: func() {
-			bookAlerts, err := database.Get().ActiveAlertsToCheck(MaxRequestsPerMinute)
+			maxRequestsPerMinute := DefaultMaxRequestsPerMinute
+
+			// Try to check if a custom value is set for the maximum number of requests per minute
+			rawEnv := os.Getenv("MAX_REQUESTS_PER_MINUTE")
+			if rawEnv != "" {
+				parsedMaxRequest, err := strconv.Atoi(rawEnv)
+				if err != nil {
+					log.Printf("Invalid value for MAX_REQUESTS_PER_MINUTE: %s", rawEnv)
+				} else {
+					maxRequestsPerMinute = parsedMaxRequest
+				}
+			}
+
+			bookAlerts, err := database.Get().ActiveAlertsToCheck(maxRequestsPerMinute)
 			if err != nil {
 				sentry.CaptureException(err)
 				return
@@ -53,7 +68,7 @@ func FetchRestaurantSlots() *tasker.Task {
 
 					InsertAvailabilities(restaurantAvailabilities, bookAlert)
 				})
-				timeToWait += int(time.Minute.Seconds() / MaxRequestsPerMinute)
+				timeToWait += int(time.Minute.Seconds() / float64(maxRequestsPerMinute))
 			}
 
 			errors := core.CreateNotifications()

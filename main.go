@@ -33,6 +33,7 @@ func main() {
 		tasks.SyncRestaurants(),
 		tasks.FetchRestaurantSlots(),
 		tasks.RenewAuthDetails(),
+		tasks.CleanupOldBookAlerts(),
 	)
 
 	go webserver.Start()

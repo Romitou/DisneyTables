@@ -7,7 +7,7 @@ import (
 )
 
 func CreateNotifications() []error {
-	bookAlerts, err := database.Get().PendingBookAlerts()
+	bookAlerts, err := database.Get().ActiveBookAlerts()
 	if err != nil {
 		return []error{err}
 	}

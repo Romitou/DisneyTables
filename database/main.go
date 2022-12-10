@@ -63,7 +63,7 @@ func (d *DisneyDatabase) LastAuthDetails() (models.AuthDetails, error) {
 	return authDetails, err
 }
 
-func (d *DisneyDatabase) PendingBookAlerts() ([]models.BookAlert, error) {
+func (d *DisneyDatabase) ActiveBookAlerts() ([]models.BookAlert, error) {
 	var bookAlerts []models.BookAlert
 	f := false
 	err := d.gorm.Where(models.BookAlert{

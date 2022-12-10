@@ -1,16 +1,16 @@
-FROM alpine:3.16 AS go
+FROM alpine:3.17 AS go
 
 WORKDIR /app/go
 RUN apk update
 RUN apk upgrade
-RUN apk add go=1.19.3-r0 --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
+RUN apk add go
 ADD . .
 ENV GOPATH /app
 RUN go get
 RUN CGO_ENABLED=1 GOOS=linux go build -ldflags "-s -w" -o disneytables
 
 
-FROM alpine:3.16
+FROM alpine:3.17
 
 WORKDIR /app
 COPY . .
