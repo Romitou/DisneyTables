@@ -132,7 +132,7 @@ func Start() {
 	})
 
 	r.GET("/bookAlerts", func(c *gin.Context) {
-		bookAlerts, err := database.Get().PendingBookAlerts()
+		bookAlerts, err := database.Get().ActiveBookAlerts()
 		if err != nil {
 			sentrygin.GetHubFromContext(c).CaptureException(err)
 			c.AbortWithStatus(http.StatusInternalServerError)
