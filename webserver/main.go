@@ -151,6 +151,17 @@ func Start() {
 		c.JSON(http.StatusOK, statistics)
 	})
 
+	r.GET("/dailyReport", func(c *gin.Context) {
+		dailyReport, err := database.Get().DailyReport()
+		if err != nil {
+			sentrygin.GetHubFromContext(c).CaptureException(err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		c.JSON(http.StatusOK, dailyReport)
+	})
+
 	log.Println("Starting webserver...")
 	err := r.Run("0.0.0.0:8080")
 	if err != nil {
