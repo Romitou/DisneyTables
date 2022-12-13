@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/go-redis/redis/v9"
+	"github.com/romitou/disneytables/database/models"
 	"os"
 )
 
@@ -27,18 +28,18 @@ func (r *DisneyRedis) Connect() {
 	})
 }
 
-type BookNotification struct {
-	BookAlertID    uint   `json:"bookAlertId"`
-	DiscordID      string `json:"discordId"`
-	RestaurantName string `json:"restaurantName"`
-	Date           string `json:"date"`
-	MealPeriod     string `json:"mealPeriod"`
-	PartyMix       int    `json:"partyMix"`
-	Hour           string `json:"hour"`
+type Notification struct {
+	BookAlertID uint              `json:"bookAlertId"`
+	DiscordID   string            `json:"discordId"`
+	Restaurant  models.Restaurant `json:"restaurant"`
+	Date        string            `json:"date"`
+	MealPeriod  string            `json:"mealPeriod"`
+	PartyMix    int               `json:"partyMix"`
+	Hours       []string          `json:"hours"`
 }
 
-func (r *DisneyRedis) SendBookNotification(alert BookNotification) error {
-	marshal, err := json.Marshal(alert)
+func (r *DisneyRedis) SendBookNotification(notification Notification) error {
+	marshal, err := json.Marshal(notification)
 	if err != nil {
 		return err
 	}
