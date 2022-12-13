@@ -181,7 +181,7 @@ func (d *DisneyDatabase) FindAvailableSlotsForAlert(alert models.BookAlert) ([]m
 	return bookSlots, err
 }
 
-func (d *DisneyDatabase) CreateNotification(notification models.BookNotification) error {
+func (d *DisneyDatabase) CreateNotification(notification *models.BookNotification) error {
 	return d.gorm.Create(&notification).Error
 }
 

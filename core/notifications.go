@@ -20,6 +20,7 @@ func CreateNotifications() []error {
 			continue
 		}
 
+		var bookNotifications []*models.BookNotification
 		for _, bookSlot := range bookSlots {
 			exists, existsErr := database.Get().NotificationExists(bookAlert, bookSlot)
 			if existsErr != nil {
@@ -34,19 +35,48 @@ func CreateNotifications() []error {
 					BookSlot:  bookSlot,
 					Active:    &active,
 				}
-				err = database.Get().CreateNotification(bookNotification)
+				err = database.Get().CreateNotification(&bookNotification)
 				if err != nil {
 					errors = append(errors, err)
 				}
+				bookNotifications = append(bookNotifications, &bookNotification)
+			}
+		}
 
-				err = SendNotification(bookNotification)
-				if err != nil {
-					errors = append(errors, err)
-				}
+		redisNotifications := GenerateNotifications(bookNotifications)
+		for _, redisNotification := range redisNotifications {
+			redisErr := redis.Get().SendBookNotification(*redisNotification)
+			if redisErr != nil {
+				errors = append(errors, redisErr)
 			}
 		}
 	}
 	return errors
+}
+
+func GenerateNotifications(bookNotifications []*models.BookNotification) []*redis.Notification {
+	var notifications []*redis.Notification
+	for _, bookNotification := range bookNotifications {
+		found := false
+		for _, notification := range notifications {
+			if notification.BookAlertID == bookNotification.BookAlert.ID {
+				found = true
+				notification.Hours = append(notification.Hours, bookNotification.BookSlot.Hour)
+			}
+		}
+		if !found {
+			notifications = append(notifications, &redis.Notification{
+				BookAlertID: bookNotification.BookAlert.ID,
+				DiscordID:   bookNotification.BookAlert.DiscordID,
+				Restaurant:  bookNotification.BookSlot.Restaurant,
+				Date:        bookNotification.BookSlot.Date,
+				MealPeriod:  bookNotification.BookSlot.MealPeriod,
+				PartyMix:    bookNotification.BookSlot.PartyMix,
+				Hours:       []string{bookNotification.BookSlot.Hour},
+			})
+		}
+	}
+	return notifications
 }
 
 func CleanupActiveNotifications() error {
@@ -65,20 +95,4 @@ func CleanupActiveNotifications() error {
 	}
 
 	return err
-}
-
-func SendNotification(notification models.BookNotification) error {
-	redisErr := redis.Get().SendBookNotification(redis.BookNotification{
-		BookAlertID:    notification.BookAlert.ID,
-		DiscordID:      notification.BookAlert.DiscordID,
-		RestaurantName: notification.BookSlot.Restaurant.Name,
-		Date:           notification.BookSlot.Date,
-		MealPeriod:     notification.BookSlot.MealPeriod,
-		PartyMix:       notification.BookSlot.PartyMix,
-		Hour:           notification.BookSlot.Hour,
-	})
-	if redisErr != nil {
-		return redisErr
-	}
-	return nil
 }
