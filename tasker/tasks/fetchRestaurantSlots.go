@@ -56,7 +56,8 @@ func FetchRestaurantSlots() *tasker.Task {
 							scope.SetExtra("date", bookAlert.Date)
 							scope.SetExtra("restaurantId", bookAlert.Restaurant.DisneyID)
 							scope.SetExtra("partyMix", bookAlert.PartyMix)
-							sentry.CaptureException(apiErr)
+							scope.SetExtra("rawData", apiErr.RawData)
+							sentry.CaptureException(apiErr.Err)
 						})
 						return
 					}

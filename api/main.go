@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/romitou/disneytables/database"
+	"io"
 	"net/http"
 	"os"
 )
@@ -58,15 +59,20 @@ type RestaurantMealSlot struct {
 	Available string `json:"available"`
 }
 
-func RestaurantAvailabilities(data RestaurantAvailabilitySearch) ([]RestaurantAvailability, error) {
+type RestaurantAvailabilityError struct {
+	Err     error
+	RawData string
+}
+
+func RestaurantAvailabilities(data RestaurantAvailabilitySearch) ([]RestaurantAvailability, *RestaurantAvailabilityError) {
 	marshalData, err := json.Marshal(data)
 	if err != nil {
-		return nil, err
+		return nil, &RestaurantAvailabilityError{Err: err}
 	}
 
 	req, err := http.NewRequest("POST", os.Getenv("AVAILABILITIES_ENDPOINT"), bytes.NewBuffer(marshalData))
 	if err != nil {
-		return nil, err
+		return nil, &RestaurantAvailabilityError{Err: err}
 	}
 
 	addCustomHeaders(req)
@@ -74,13 +80,18 @@ func RestaurantAvailabilities(data RestaurantAvailabilitySearch) ([]RestaurantAv
 
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, &RestaurantAvailabilityError{Err: err}
 	}
 
 	var responseData []RestaurantAvailability
-	err = json.NewDecoder(response.Body).Decode(&responseData)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		return nil, err
+		return nil, &RestaurantAvailabilityError{Err: err, RawData: string(body)}
+	}
+
+	err = json.Unmarshal(body, &responseData)
+	if err != nil {
+		return nil, &RestaurantAvailabilityError{Err: err, RawData: string(body)}
 	}
 
 	return responseData, nil
