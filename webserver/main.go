@@ -50,9 +50,15 @@ func Start() {
 			return
 		}
 
-		availabilities, err := api.RestaurantAvailabilities(search)
-		if err != nil {
-			sentrygin.GetHubFromContext(c).CaptureException(err)
+		availabilities, apiErr := api.RestaurantAvailabilities(search)
+		if apiErr != nil {
+			sentrygin.GetHubFromContext(c).WithScope(func(scope *sentry.Scope) {
+				scope.SetExtra("date", search.Date)
+				scope.SetExtra("restaurantId", search.RestaurantID)
+				scope.SetExtra("partyMix", search.PartyMix)
+				scope.SetExtra("rawData", apiErr.RawData)
+				sentrygin.GetHubFromContext(c).CaptureException(apiErr.Err)
+			})
 			return
 		}
 
