@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"github.com/romitou/disneytables/database"
 	"io"
 	"net/http"
@@ -92,7 +93,7 @@ func RestaurantAvailabilities(data RestaurantAvailabilitySearch) ([]RestaurantAv
 
 	if response.StatusCode != 200 {
 		return nil, &RestaurantAvailabilityError{
-			Err:            err,
+			Err:            errors.New("non-200 status code"),
 			RawData:        string(body),
 			HttpStatusCode: response.StatusCode,
 		}
