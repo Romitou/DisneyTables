@@ -60,8 +60,9 @@ type RestaurantMealSlot struct {
 }
 
 type RestaurantAvailabilityError struct {
-	Err     error
-	RawData string
+	Err            error
+	HttpStatusCode int
+	RawData        string
 }
 
 func RestaurantAvailabilities(data RestaurantAvailabilitySearch) ([]RestaurantAvailability, *RestaurantAvailabilityError) {
@@ -87,6 +88,14 @@ func RestaurantAvailabilities(data RestaurantAvailabilitySearch) ([]RestaurantAv
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, &RestaurantAvailabilityError{Err: err, RawData: string(body)}
+	}
+
+	if response.StatusCode != 200 {
+		return nil, &RestaurantAvailabilityError{
+			Err:            err,
+			RawData:        string(body),
+			HttpStatusCode: response.StatusCode,
+		}
 	}
 
 	err = json.Unmarshal(body, &responseData)

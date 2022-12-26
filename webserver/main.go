@@ -59,6 +59,7 @@ func Start() {
 				scope.SetExtra("rawData", apiErr.RawData)
 				sentrygin.GetHubFromContext(c).CaptureException(apiErr.Err)
 			})
+			c.AbortWithStatus(apiErr.HttpStatusCode)
 			return
 		}
 
