@@ -59,6 +59,10 @@ func FetchRestaurantSlots() *tasker.Task {
 							scope.SetExtra("rawData", apiErr.RawData)
 							sentry.CaptureException(apiErr.Err)
 						})
+						err = database.Get().MarkAlertAsErrored(bookAlert)
+						if err != nil {
+							sentry.CaptureException(err)
+						}
 						return
 					}
 

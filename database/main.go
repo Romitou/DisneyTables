@@ -93,6 +93,13 @@ func (d *DisneyDatabase) ActiveAlertsToCheck(limit int) ([]models.BookAlert, err
 
 func (d *DisneyDatabase) MarkAlertAsChecked(alert models.BookAlert) error {
 	alert.CheckedAt = time.Now()
+	alert.CheckCount++
+	return d.gorm.Save(&alert).Error
+}
+
+func (d *DisneyDatabase) MarkAlertAsErrored(alert models.BookAlert) error {
+	alert.CheckedAt = time.Now()
+	alert.ErrorCount++
 	return d.gorm.Save(&alert).Error
 }
 
