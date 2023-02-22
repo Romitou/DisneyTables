@@ -170,7 +170,7 @@ func Start() {
 	})
 
 	log.Println("Starting webserver...")
-	err := r.Run("0.0.0.0:8080")
+	err := r.Run()
 	if err != nil {
 		sentry.CaptureException(err)
 	}
