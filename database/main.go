@@ -242,28 +242,23 @@ type DisneyStatistics struct {
 }
 
 func (d *DisneyDatabase) Statistics() (DisneyStatistics, error) {
+	completed := false
+
 	var bookAlertsCount int64
-	err := d.gorm.Model(&models.BookAlert{}).Count(&bookAlertsCount).Error
+	err := d.gorm.Model(&models.BookAlert{}).Where("completed = ?", &completed).Count(&bookAlertsCount).Error
 	if err != nil {
 		return DisneyStatistics{}, err
 	}
 
 	var bookSlotsCount int64
-	err = d.gorm.Model(&models.BookSlot{}).Count(&bookSlotsCount).Error
-	if err != nil {
-		return DisneyStatistics{}, err
-	}
-
-	var sentNotificationsCount int64
-	err = d.gorm.Model(&models.BookNotification{}).Count(&sentNotificationsCount).Error
+	err = d.gorm.Model(&models.BookSlot{}).Where("STR_TO_DATE(date, '%Y-%m-%d') > CURDATE()").Count(&bookSlotsCount).Error
 	if err != nil {
 		return DisneyStatistics{}, err
 	}
 
 	return DisneyStatistics{
-		BookAlertsCount:        int(bookAlertsCount),
-		BookSlotsCount:         int(bookSlotsCount),
-		SentNotificationsCount: int(sentNotificationsCount),
+		BookAlertsCount: int(bookAlertsCount),
+		BookSlotsCount:  int(bookSlotsCount),
 	}, nil
 }
 
