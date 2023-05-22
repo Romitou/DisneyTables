@@ -8,6 +8,7 @@ import (
 	"github.com/romitou/disneytables/database/models"
 	"github.com/romitou/disneytables/tasker"
 	"log"
+	"math"
 	"os"
 	"strconv"
 	"time"
@@ -31,6 +32,20 @@ func FetchRestaurantSlots() *tasker.Task {
 				} else {
 					maxRequestsPerMinute = parsedMaxRequest
 				}
+			}
+
+			// Eco mode modifier
+			// This eco mode modifier is used to reduce the number of requests, especially at night. All the tables
+			// are for the most part booked during the day, so we can reduce the number of requests at night.
+			hour := time.Now().Hour()
+			if hour <= 8 {
+				rawModifier := 1 - ((-1 / 16) * hour * (hour - 8))
+				modifier := float64(rawModifier) - 0.2
+				if modifier > 1 {
+					modifier = 1
+				}
+
+				maxRequestsPerMinute = maxRequestsPerMinute * int(math.Round(modifier))
 			}
 
 			bookAlerts, err := database.Get().ActiveAlertsToCheck(maxRequestsPerMinute)
