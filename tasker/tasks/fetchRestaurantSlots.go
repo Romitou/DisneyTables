@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"encoding/json"
 	"github.com/getsentry/sentry-go"
 	"github.com/romitou/disneytables/api"
 	"github.com/romitou/disneytables/core"
@@ -30,6 +31,24 @@ func FetchRestaurantSlots() *tasker.Task {
 					log.Printf("Invalid value for MAX_REQUESTS_PER_MINUTE: %s", rawEnv)
 				} else {
 					maxRequestsPerMinute = parsedMaxRequest
+				}
+			}
+
+			rawModifiers := os.Getenv("REQUEST_MODIFIERS")
+			if rawModifiers != "" {
+				var customModifiers map[string]float64
+				err := json.Unmarshal([]byte(rawModifiers), &customModifiers)
+				if err != nil {
+					log.Printf("Invalid value for REQUEST_MODIFIERS: %s", rawModifiers)
+				}
+
+				hour := strconv.Itoa(time.Now().Hour())
+				modifier := customModifiers[hour]
+				if modifier != 0 {
+					oldRequestsPerMinute := maxRequestsPerMinute
+					maxRequestsPerMinute = int(float64(maxRequestsPerMinute) * modifier)
+					log.Println("Using custom modifier for requests per minute:", modifier)
+					log.Println("Requests per minute passing from", oldRequestsPerMinute, "to", maxRequestsPerMinute)
 				}
 			}
 
