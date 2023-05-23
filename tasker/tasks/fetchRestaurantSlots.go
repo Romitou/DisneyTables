@@ -45,9 +45,10 @@ func FetchRestaurantSlots() *tasker.Task {
 				hour := strconv.Itoa(time.Now().Hour())
 				modifier := customModifiers[hour]
 				if modifier != 0 {
+					oldRequestsPerMinute := maxRequestsPerMinute
 					maxRequestsPerMinute = int(float64(maxRequestsPerMinute) * modifier)
 					log.Println("Using custom modifier for requests per minute:", modifier)
-					log.Println("Requests per minute passing from", DefaultMaxRequestsPerMinute, "to", maxRequestsPerMinute)
+					log.Println("Requests per minute passing from", oldRequestsPerMinute, "to", maxRequestsPerMinute)
 				}
 			}
 
