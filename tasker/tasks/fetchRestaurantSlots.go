@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"encoding/json"
 	"github.com/getsentry/sentry-go"
 	"github.com/romitou/disneytables/api"
 	"github.com/romitou/disneytables/core"
@@ -8,7 +9,6 @@ import (
 	"github.com/romitou/disneytables/database/models"
 	"github.com/romitou/disneytables/tasker"
 	"log"
-	"math"
 	"os"
 	"strconv"
 	"time"
@@ -34,18 +34,18 @@ func FetchRestaurantSlots() *tasker.Task {
 				}
 			}
 
-			// Eco mode modifier
-			// This eco mode modifier is used to reduce the number of requests, especially at night. All the tables
-			// are for the most part booked during the day, so we can reduce the number of requests at night.
-			hour := time.Now().Hour()
-			if hour <= 8 {
-				rawModifier := 1 - ((-1 / 16) * hour * (hour - 8))
-				modifier := float64(rawModifier) - 0.2
-				if modifier > 1 {
-					modifier = 1
+			rawModifiers := os.Getenv("REQUEST_MODIFIERS")
+			if rawModifiers != "" {
+				var customModifiers map[string]float64
+				err := json.Unmarshal([]byte(rawModifiers), &customModifiers)
+				if err != nil {
+					log.Printf("Invalid value for REQUEST_MODIFIERS: %s", rawModifiers)
 				}
 
-				maxRequestsPerMinute = maxRequestsPerMinute * int(math.Round(modifier))
+				modifier := customModifiers[string(rune(time.Now().Hour()))]
+				if modifier != 0 {
+					maxRequestsPerMinute = int(float64(maxRequestsPerMinute) * modifier)
+				}
 			}
 
 			bookAlerts, err := database.Get().ActiveAlertsToCheck(maxRequestsPerMinute)
