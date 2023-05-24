@@ -1,4 +1,14 @@
+# Environment files
 .env
-.idea
+.env.local
+
+# IDEs & Editors
+.idea/
 *.iml
-builds
+.vscode/
+
+# Build artifacts & Binaries
+builds/
+disneytables
+*.exe
+*.test
